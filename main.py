@@ -11,11 +11,9 @@ from mnist import MNIST
 
 
 # Set dataset path before start example  '/Home/sudoku_dataset-master' :
-sudoku_dataset_dir = '/Users/barisozcan/Documents/CS423 Computer Vision/sudoku_dataset-master'
-MNIST_dataset_dir = "/Users/barisozcan/Documents/MNIST_dataset"
-
-# Load MNIST Dataset:
-train_images, train_labels, test_images, test_labels = mnist(path=MNIST_dataset_dir)
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+sudoku_dataset_dir = ROOT_DIR + '\\sudoku_dataset'
+MNIST_dataset_dir = ROOT_DIR + '\\mnist_dataset'
 
 mndata = MNIST(MNIST_dataset_dir)
 train_images, train_labels = mndata.load_training()
@@ -29,8 +27,8 @@ test_images, test_labels = mndata.load_testing()
 # print(reporting_results)
 
 
-image_dirs = sudoku_dataset_dir + '/images/image*.jpg'
-data_dirs = sudoku_dataset_dir + '/images/image*.dat'
+image_dirs = sudoku_dataset_dir + '\\image*.jpg'
+data_dirs = sudoku_dataset_dir + '\\image*.dat'
 IMAGE_DIRS = glob.glob(image_dirs)
 DATA_DIRS = glob.glob(data_dirs)
 len(IMAGE_DIRS)
