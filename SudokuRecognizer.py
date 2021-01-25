@@ -1,3 +1,4 @@
+# Eray HAVAYLAR S018954 Department of Computer Science
 import cv2
 import numpy as np
 
