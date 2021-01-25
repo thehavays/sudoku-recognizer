@@ -1,4 +1,3 @@
-# DO NOT IMPORT ANY OTHER LIBRARY.
 import numpy as np
 import glob
 import cv2
@@ -7,65 +6,66 @@ import os
 import SudokuRecognizer as sr
 from mnist import MNIST
 
-# Define your functions here if required :
-
+K_NEIGHBOR_VALUE = 9
+PCA_THRESHOLD = 70
 
 # Set dataset path before start example  '/Home/sudoku_dataset-master' :
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-sudoku_dataset_dir = ROOT_DIR + '\\sudoku_dataset'
-MNIST_dataset_dir = ROOT_DIR + '\\mnist_dataset'
+SUDOKU_DATASET_DIR = ROOT_DIR + '\\sudoku_dataset'
+MNIST_DATASET_DIR = ROOT_DIR + '\\mnist_dataset'
 
-mndata = MNIST(MNIST_dataset_dir)
-train_images, train_labels = mndata.load_training()
-test_images, test_labels = mndata.load_testing()
+# Load data from MNIST :
+mnist_data = MNIST(MNIST_DATASET_DIR)
+train_images, train_labels = mnist_data.load_training()
+test_images, test_labels = mnist_data.load_testing()
 
-# Apply PCA to MNIST :
-# use sr.mnistPCA() that you applier for transformation
-# classify test set with any method you choose (hint simplest one : nearest neighbour)
-# report the outcome
-# Calculate confusion matrix, false postivies/negatives.
-# print(reporting_results)
+# Applying PCA to MNIST :
+projection_matrix, transformation_matrix = sr.mnist_PCA(train_images, PCA_THRESHOLD)
 
+dataset = []
+for i in range(len(train_images)):
+    dataset.append((transformation_matrix[i, :], train_labels[i]))
 
-image_dirs = sudoku_dataset_dir + '\\image*.jpg'
-data_dirs = sudoku_dataset_dir + '\\image*.dat'
-IMAGE_DIRS = glob.glob(image_dirs)
-DATA_DIRS = glob.glob(data_dirs)
-len(IMAGE_DIRS)
+# Calculating confusion matrix, false positives/negatives.
+confusion_matrix = sr.calculate_confusion_matrix(test_images, test_labels, dataset, projection_matrix,
+                                                 K_NEIGHBOR_VALUE)
 
-# Define your variables etc. outside for loop here:
+IMAGE_DIR = SUDOKU_DATASET_DIR + '\\image*.jpg'
+DATA_DIR = SUDOKU_DATASET_DIR + '\\image*.dat'
+ALL_IMAGE_DIRS = glob.glob(IMAGE_DIR)
+ALL_DATA_DIRS = glob.glob(DATA_DIR)
+len(ALL_IMAGE_DIRS)
 
 # Accumulate accuracy for average accuracy calculation.
-cumulativeAcc = 0
+cumulative_acc = 0
+collection_of_sudoku_arrays = []
+collection_of_data = []
 
 # Loop over all images
-for img_dir, data_dir in zip(IMAGE_DIRS, DATA_DIRS):
+for img_dir, data_dir in zip(ALL_IMAGE_DIRS, ALL_DATA_DIRS):
     # Define your variables etc.:
     image_name = os.path.basename(img_dir)
     data = np.genfromtxt(data_dir, skip_header=2, dtype=int, delimiter=' ')
     img = cv2.imread(img_dir)
 
     # detect sudoku puzzle:
-    boundingBox = sr.detectSudoku(img)
-
-    # Uncomment this section if you would like to see resulting bounding boxes.
-    # cv2.rectangle(img, boundingBox[0], boundingBox[1], (0, 0, 255), 2)
-    # cv2.imshow(image_name, img)
-    # cv2.waitKey()
+    bounding_box = sr.detect_sudoku(img)
 
     # Recognize digits in sudoku puzzle :
-    sudokuArray = sr.RecognizeSudoku(img)
+    sudoku_array = sr.recognize_sudoku(img, bounding_box, dataset, projection_matrix, K_NEIGHBOR_VALUE)
+
+    collection_of_data.append(data)
+    collection_of_sudoku_arrays.append(sudoku_array)
 
     # Evaluate Result for current image :
-
-    detectionAccuracyArray = data == sudokuArray
+    detectionAccuracyArray = data == sudoku_array
     accPercentage = np.sum(detectionAccuracyArray) / detectionAccuracyArray.size
-    cumulativeAcc = cumulativeAcc + accPercentage
+    cumulative_acc = cumulative_acc + accPercentage
     print(image_name + " accuracy : " + accPercentage.__str__() + "%")
 
-# Calculate confusion matrix, false postivies/negatives for Sudoku dataset here.
-
+# Calculate confusion matrix, false positives/negatives for Sudoku dataset here.
+sr.calculate_confusion_matrix_sudoku(collection_of_sudoku_arrays, collection_of_data)
 
 # Average accuracy over all images in the dataset :
-averageAcc = cumulativeAcc / len(IMAGE_DIRS)
+averageAcc = cumulative_acc / len(ALL_IMAGE_DIRS)
 print("dataset performance : " + averageAcc.__str__() + "%")
